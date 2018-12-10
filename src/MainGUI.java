@@ -1,6 +1,10 @@
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.Observable;
+import java.util.Observer;
 
 import javax.swing.JFrame;
 import javax.swing.SpringLayout;
@@ -27,13 +31,28 @@ public class MainGUI extends JFrame{
   private ButtonGroup bgroup;
   private JRadioButton LLH_to_ECEF_RadioButton;
   private JRadioButton ECEF_to_LLH_RadioButton;
+  private ECEF_Calculation ecef;
+
 
   
 	public MainGUI() {
 		
 		setUpFrame();
 		initUI();
+		
+		ecef = new ECEF_Calculation();
+
 	}
+	
+	//public static String getWhichRadioButtonIsChecked() {
+		//String rbType = "LLH_to_ECEF";
+		//if(LLH_to_ECEF_RadioButton.isSelected()) {
+			//rbType = "LLH_to_ECEF";
+		//}elseif(ECEF_to_LLH_RadioButton.isSelected()){
+			//rbType = "ECEF_to_LLH";
+		//}
+		//return rbType;
+	//}
 
 	private void initUI() {
 		//initialize layouts
@@ -49,8 +68,6 @@ public class MainGUI extends JFrame{
 		resultsPanel = new JPanel();
 		optionsPanel = new JPanel();
 		radioPanel = new JPanel();
-		
-		
 		
 		//initialize button groups
 		bgroup = new ButtonGroup();
@@ -76,6 +93,7 @@ public class MainGUI extends JFrame{
 		resultLabel2 = new JLabel("0");
 		resultLabel3 = new JLabel("0");		
 		
+		
 		//initialize text fields
 	    inputTextField2 = new JTextField();
 	    inputTextField1 = new JTextField();
@@ -89,6 +107,7 @@ public class MainGUI extends JFrame{
 	    //call private setups
 		setUpPanels();
 		setUpLayout();
+		setUpListeners();
 		
 	}
 	
@@ -138,6 +157,7 @@ public class MainGUI extends JFrame{
 		springLayout.putConstraint(SpringLayout.SOUTH, resultsPanel, 186, SpringLayout.NORTH, getContentPane());
 		
 		
+		
 		//optionsPanel constraints code
 		optionsPanel.setLayout(optionsPanelLayout);
 		optionsPanel.setBorder(new EtchedBorder(EtchedBorder.RAISED, null, Color.BLACK));
@@ -166,19 +186,22 @@ public class MainGUI extends JFrame{
 		
 		resultsLayout.putConstraint(SpringLayout.NORTH, outputLabel1, 12, SpringLayout.NORTH, resultsPanel);
 		resultsLayout.putConstraint(SpringLayout.WEST, outputLabel1, 12, SpringLayout.WEST, resultsPanel);
-		resultsLayout.putConstraint(SpringLayout.EAST, outputLabel1, 80, SpringLayout.WEST, resultsPanel);
-		
-		resultsLayout.putConstraint(SpringLayout.NORTH, outputLabel2, 26, SpringLayout.SOUTH, outputLabel1);
-		resultsLayout.putConstraint(SpringLayout.WEST, outputLabel2, 0, SpringLayout.WEST, outputLabel1);
-		resultsLayout.putConstraint(SpringLayout.WEST, outputLabel3, 0, SpringLayout.WEST, outputLabel1);
 		resultsLayout.putConstraint(SpringLayout.SOUTH, outputLabel3, -22, SpringLayout.SOUTH, resultsPanel);
-	
-		resultsLayout.putConstraint(SpringLayout.NORTH, resultLabel1, 0, SpringLayout.NORTH, outputLabel1);
-		resultsLayout.putConstraint(SpringLayout.WEST, resultLabel1, 32, SpringLayout.EAST, outputLabel1);
-		resultsLayout.putConstraint(SpringLayout.NORTH, resultLabel2, 0, SpringLayout.NORTH, outputLabel2);
 		resultsLayout.putConstraint(SpringLayout.WEST, resultLabel2, 0, SpringLayout.WEST, resultLabel1);
-		resultsLayout.putConstraint(SpringLayout.NORTH, resultLabel3, 0, SpringLayout.NORTH, outputLabel3);
 		resultsLayout.putConstraint(SpringLayout.WEST, resultLabel3, 0, SpringLayout.WEST, resultLabel1);
+		
+		
+		resultsLayout.putConstraint(SpringLayout.EAST, outputLabel1, 92, SpringLayout.WEST, resultsPanel);
+		resultsLayout.putConstraint(SpringLayout.NORTH, outputLabel2, 24, SpringLayout.SOUTH, outputLabel1);
+		resultsLayout.putConstraint(SpringLayout.WEST, outputLabel2, 12, SpringLayout.WEST, resultsPanel);
+		resultsLayout.putConstraint(SpringLayout.EAST, outputLabel2, 92, SpringLayout.WEST, resultsPanel);
+		resultsLayout.putConstraint(SpringLayout.WEST, outputLabel3, 12, SpringLayout.WEST, resultsPanel);
+		resultsLayout.putConstraint(SpringLayout.EAST, outputLabel3, 92, SpringLayout.WEST, resultsPanel);
+		resultsLayout.putConstraint(SpringLayout.NORTH, resultLabel1, 12, SpringLayout.NORTH, resultsPanel);
+		resultsLayout.putConstraint(SpringLayout.WEST, resultLabel1, 18, SpringLayout.EAST, outputLabel1);
+		resultsLayout.putConstraint(SpringLayout.NORTH, resultLabel2, 24, SpringLayout.SOUTH, resultLabel1);
+		resultsLayout.putConstraint(SpringLayout.SOUTH, resultLabel3, -22, SpringLayout.SOUTH, resultsPanel);
+		
 		
 		springLayout.putConstraint(SpringLayout.SOUTH, optionsPanel, -10, SpringLayout.SOUTH, getContentPane());
 		springLayout.putConstraint(SpringLayout.EAST, optionsPanel, -175, SpringLayout.EAST, getContentPane());
@@ -205,6 +228,40 @@ public class MainGUI extends JFrame{
 		
 	}
 	
+	private void setUpListeners() {
+		ECEF_to_LLH_RadioButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent event) {
+				switchGUI("toLLH");
+				resetValues();			
+			}
+		});
+		
+		LLH_to_ECEF_RadioButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				switchGUI("toECEF");
+				resetValues();
+			}
+		});
+		
+		submitBtn.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				double latitude = Double.parseDouble(inputTextField1.getText());
+				double longitude = Double.parseDouble(inputTextField2.getText());
+				double height = Double.parseDouble(inputTextField3.getText());
+				
+				if(LLH_to_ECEF_RadioButton.isSelected()) {
+					ecef.calculateXYZ(latitude, longitude, height);
+					resultLabel1.setText((ecef.getXResult()) + "m");
+					resultLabel2.setText((ecef.getYResult()) + "m");
+					resultLabel3.setText((ecef.getZResult()) + "m");
+				}
+			}
+		});
+	}
+	
 	private void setUpFrame() {
 		this.setTitle("Convert LLH to ECEF or Vice Versa");
 		this.setSize(winWidth, winHeight);
@@ -218,4 +275,39 @@ public class MainGUI extends JFrame{
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);		
 		
     }
+	
+	//switch gui function switches the labels from ECEF -> LLH or Vice Versa depending on user radio button selection.
+	private void switchGUI(String whatTo) {
+		if(whatTo == "toLLH") {
+			if(ECEF_to_LLH_RadioButton.isSelected()) {
+				inputLabel1.setText("X Coordinate");
+				inputLabel2.setText("Y Coordinate");
+				inputLabel3.setText("Z Coordinate");
+				
+				outputLabel1.setText("Latitude");
+				outputLabel2.setText("Longitude");
+				outputLabel3.setText("Height");
+			}
+		}else if(whatTo == "toECEF") {
+			if(LLH_to_ECEF_RadioButton.isSelected()) {
+				inputLabel1.setText("Latitude");
+				inputLabel2.setText("Longitude");
+				inputLabel3.setText("Height");
+				
+				outputLabel1.setText("X Coordinate");
+				outputLabel2.setText("Y Coordinate");
+				outputLabel3.setText("Z Coordinate");
+			}
+		}
+	}
+	
+	private void resetValues() {
+		inputTextField1.setText(" ");
+		inputTextField2.setText(" ");
+		inputTextField3.setText(" ");
+		
+		resultLabel1.setText("0");
+		resultLabel2.setText("0");
+		resultLabel3.setText("0");
+	}
 }

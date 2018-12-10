@@ -9,7 +9,6 @@ public class Main {
 			public void run() {
 				MainGUI myApp = new MainGUI();
 				myApp.setVisible(true);
-				
 			}
 			
 		});
